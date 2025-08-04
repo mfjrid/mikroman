@@ -10,9 +10,14 @@
                 <h1><i class="bi bi-activity"></i> Monitor: {{ $mikrotik->name }}</h1>
                 <p class="text-muted">{{ $mikrotik->ip_address }}:{{ $mikrotik->port }}</p>
             </div>
-            <a href="{{ route('dashboard') }}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Kembali
-            </a>
+            <div>
+                <a href="{{ route('mikrotik-users.index', $mikrotik) }}" class="btn btn-info me-2">
+                    <i class="bi bi-people"></i> User Management
+                </a>
+                <a href="{{ route('dashboard') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Kembali
+                </a>
+            </div>
         </div>
     </div>
 </div>

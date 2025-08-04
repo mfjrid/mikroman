@@ -5,7 +5,8 @@ namespace App\Services;
 use App\Models\Mikrotik;
 use RouterOS\Client;
 use RouterOS\Config;
-use RouterOS\Exceptions\Exception;
+use RouterOS\Query;
+use Exception;
 
 class MikrotikService
 {
@@ -246,13 +247,13 @@ class MikrotikService
         }
 
         try {
-            $this->client->query('/user/add', [
-                'name' => $username,
-                'password' => $password,
-                'group' => $group,
-                'disabled' => $disabled ? 'yes' : 'no'
-            ])->read();
-            return true;
+            $query = new Query('/user/add');
+            $query->equal('name', $username)
+                ->equal('password', $password)
+                ->equal('group', $group)
+                ->equal('disabled', $disabled ? 'yes' : 'no');
+
+            $this->client->query($query)->read();
         } catch (Exception $e) {
             return false;
         }
