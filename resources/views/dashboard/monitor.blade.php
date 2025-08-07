@@ -11,6 +11,9 @@
                 <p class="text-muted">{{ $mikrotik->ip_address }}:{{ $mikrotik->port }}</p>
             </div>
             <div>
+                <a href="{{ route('mikrotik-ppp.index', $mikrotik) }}" class="btn btn-warning me-2">
+                    <i class="bi bi-shield-lock"></i> PPP Secrets
+                </a>
                 <a href="{{ route('mikrotik-users.index', $mikrotik) }}" class="btn btn-info me-2">
                     <i class="bi bi-people"></i> User Management
                 </a>
