@@ -113,24 +113,24 @@
                                 <td>{{ $secret['profile'] ?? 'default' }}</td>
                                 <td>
                                     @if($secret['is_active'])
-                                    <span class="badge bg-success">
-                                        <i class="bi bi-circle-fill"></i> Online
-                                    </span>
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-circle-fill"></i> Online
+                                        </span>
                                     @else
-                                    <span class="badge bg-secondary">
-                                        <i class="bi bi-circle"></i> Offline
-                                    </span>
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-circle"></i> Offline
+                                        </span>
                                     @endif
                                 </td>
                                 <td>
                                     @if($secret['is_active'] && $secret['connection_info'])
-                                    <small>
-                                        <strong>IP:</strong> {{ $secret['connection_info']['address'] ?? 'N/A' }}<br>
-                                        <strong>Caller:</strong> {{ $secret['connection_info']['caller-id'] ?? 'N/A' }}<br>
-                                        <strong>Uptime:</strong> {{ $secret['connection_info']['uptime'] ?? 'N/A' }}
-                                    </small>
+                                        <small>
+                                            <strong>IP:</strong> {{ $secret['connection_info']['address'] ?? 'N/A' }}<br>
+                                            <strong>Caller:</strong> {{ $secret['connection_info']['caller-id'] ?? 'N/A' }}<br>
+                                            <strong>Uptime:</strong> {{ $secret['connection_info']['uptime'] ?? 'N/A' }}
+                                        </small>
                                     @else
-                                    <span class="text-muted">-</span>
+                                        <span class="text-muted">-</span>
                                     @endif
                                 </td>
                                 <td>
@@ -138,7 +138,7 @@
                                 </td>
                                 <td>
                                     @php
-                                    $isDisabled = isset($secret['disabled']) && $secret['disabled'] === 'true';
+                                        $isDisabled = isset($secret['disabled']) && $secret['disabled'] === 'true';
                                     @endphp
                                     <span class="badge bg-{{ $isDisabled ? 'danger' : 'success' }}">
                                         {{ $isDisabled ? 'Disabled' : 'Enabled' }}
@@ -147,19 +147,19 @@
                                 <td>
                                     <div class="btn-group" role="group">
                                         @if($secret['is_active'])
-                                        <button type="button" class="btn btn-sm btn-warning"
-                                            onclick="disconnectUser('{{ $secret['.id'] }}', '{{ $secret['name'] }}')"
-                                            title="Disconnect">
-                                            <i class="bi bi-power"></i>
-                                        </button>
+                                            <button type="button" class="btn btn-sm btn-warning" 
+                                                    onclick="disconnectUser('{{ $secret['.id'] }}', '{{ $secret['name'] }}')"
+                                                    title="Disconnect">
+                                                <i class="bi bi-power"></i>
+                                            </button>
                                         @endif
-                                        <a href="{{ route('mikrotik-ppp.edit', [$mikrotik, $secret['.id']]) }}"
-                                            class="btn btn-sm btn-primary" title="Edit">
+                                        <a href="{{ route('mikrotik-ppp.edit', [$mikrotik, $secret['.id']]) }}" 
+                                           class="btn btn-sm btn-primary" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <form action="{{ route('mikrotik-ppp.destroy', [$mikrotik, $secret['.id']]) }}"
-                                            method="POST" class="d-inline"
-                                            onsubmit="return confirm('Yakin ingin menghapus secret {{ $secret['name'] }}?')">
+                                        <form action="{{ route('mikrotik-ppp.destroy', [$mikrotik, $secret['.id']]) }}" 
+                                              method="POST" class="d-inline" 
+                                              onsubmit="return confirm('Yakin ingin menghapus secret {{ $secret['name'] }}?')">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-danger" title="Hapus">
@@ -189,71 +189,65 @@
 
 @push('scripts')
 <script>
-    function disconnectUser(activeId, username) {
-        if (confirm(`Yakin ingin disconnect user ${username}?`)) {
-            fetch(`{{ route('mikrotik-ppp.disconnect', [$mikrotik, '__ACTIVE_ID__']) }}`.replace('__ACTIVE_ID__', activeId), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        refreshStatus();
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    alert('Terjadi kesalahan: ' + error);
-                });
-        }
+function disconnectUser(activeId, username) {
+    if (confirm(`Yakin ingin disconnect user ${username}?`)) {
+        fetch(`{{ route('mikrotik-ppp.disconnect', [$mikrotik, '__ACTIVE_ID__']) }}`.replace('__ACTIVE_ID__', activeId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                refreshStatus();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Terjadi kesalahan: ' + error);
+        });
     }
+}
 
-    function refreshStatus() {
-        const refreshBtn = document.getElementById('refreshBtn');
-        refreshBtn.disabled = true;
-        refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Refreshing...';
+function refreshStatus() {
+    const refreshBtn = document.getElementById('refreshBtn');
+    refreshBtn.disabled = true;
+    refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Refreshing...';
 
-        fetch('{{ route('
-                mikrotik - ppp.refresh ', $mikrotik) }}')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('Gagal refresh data');
-                }
-            })
-            .catch(error => {
-                alert('Terjadi kesalahan: ' + error);
-            })
-            .finally(() => {
-                refreshBtn.disabled = false;
-                refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh';
-            });
-    }
+    fetch('{{ route('mikrotik-ppp.refresh', $mikrotik) }}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Gagal refresh data');
+            }
+        })
+        .catch(error => {
+            alert('Terjadi kesalahan: ' + error);
+        })
+        .finally(() => {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh';
+        });
+}
 
-    // Auto refresh setiap 30 detik
-    setInterval(refreshStatus, 30000);
+// Auto refresh setiap 30 detik
+setInterval(refreshStatus, 30000);
 </script>
 
 <style>
-    .spin {
-        animation: spin 1s linear infinite;
-    }
+.spin {
+    animation: spin 1s linear infinite;
+}
 
-    @keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-    }
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 </style>
 @endpush
 @endsection
