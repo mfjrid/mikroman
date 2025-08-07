@@ -134,7 +134,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <small>{{ $secret['last-logout'] ?? 'Never' }}</small>
+                                    <small>{{ $secret['last-logged-out'] ?? 'Never' }}</small>
                                 </td>
                                 <td>
                                     @php
