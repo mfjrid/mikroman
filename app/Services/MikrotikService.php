@@ -2,11 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\Mikrotik;
+use Exception;
+use RouterOS\Query;
 use RouterOS\Client;
 use RouterOS\Config;
-use RouterOS\Query;
-use Exception;
+use App\Models\Mikrotik;
+use Illuminate\Support\Facades\Log;
 
 class MikrotikService
 {
@@ -340,6 +341,204 @@ class MikrotikService
             return true;
         } catch (Exception $e) {
             return false;
+        }
+    }
+
+
+    // ========== PPP SECRET MANAGEMENT METHODS ==========
+
+    public function getPPPSecrets()
+    {
+        if (!$this->connect()) {
+            return [];
+        }
+
+        try {
+            return $this->client->query('/ppp/secret/print')->read();
+        } catch (Exception $e) {
+            Log::error('Error getting PPP secrets: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getPPPActiveConnections()
+    {
+        if (!$this->connect()) {
+            return [];
+        }
+
+        try {
+            return $this->client->query('/ppp/active/print')->read();
+        } catch (Exception $e) {
+            Log::error('Error getting PPP active connections: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getPPPSecretsWithStatus()
+    {
+        if (!$this->connect()) {
+            return [];
+        }
+
+        try {
+            // Get all secrets
+            $secrets = $this->client->query('/ppp/secret/print')->read();
+
+            // Get active connections
+            $activeConnections = $this->client->query('/ppp/active/print')->read();
+
+            // Create array of active usernames for quick lookup
+            $activeUsers = [];
+            foreach ($activeConnections as $connection) {
+                $activeUsers[$connection['name']] = [
+                    'caller-id' => $connection['caller-id'] ?? '',
+                    'address' => $connection['address'] ?? '',
+                    'uptime' => $connection['uptime'] ?? '',
+                    'encoding' => $connection['encoding'] ?? '',
+                ];
+            }
+
+            // Merge data
+            $secretsWithStatus = [];
+            foreach ($secrets as $secret) {
+                $username = $secret['name'] ?? '';
+                $isActive = isset($activeUsers[$username]);
+
+                $secretsWithStatus[] = array_merge($secret, [
+                    'is_active' => $isActive,
+                    'connection_info' => $isActive ? $activeUsers[$username] : null,
+                    'status_text' => $isActive ? 'Online' : 'Offline'
+                ]);
+            }
+
+            return $secretsWithStatus;
+        } catch (Exception $e) {
+            Log::error('Error getting PPP secrets with status: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function createPPPSecret($data)
+    {
+        if (!$this->connect()) {
+            return false;
+        }
+
+        try {
+            $query = $this->client->query('/ppp/secret/add')
+                ->equal('name', $data['name'])
+                ->equal('password', $data['password']);
+
+            if (!empty($data['service'])) {
+                $query->equal('service', $data['service']);
+            }
+            if (!empty($data['profile'])) {
+                $query->equal('profile', $data['profile']);
+            }
+            if (!empty($data['local-address'])) {
+                $query->equal('local-address', $data['local-address']);
+            }
+            if (!empty($data['remote-address'])) {
+                $query->equal('remote-address', $data['remote-address']);
+            }
+            if (isset($data['disabled'])) {
+                $query->equal('disabled', $data['disabled'] ? 'yes' : 'no');
+            }
+
+            $query->read();
+            return true;
+        } catch (Exception $e) {
+            Log::error('Error creating PPP secret: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function updatePPPSecret($secretId, $data)
+    {
+        if (!$this->connect()) {
+            return false;
+        }
+
+        try {
+            $query = $this->client->query('/ppp/secret/set')
+                ->equal('.id', $secretId);
+
+            if (isset($data['name'])) {
+                $query->equal('name', $data['name']);
+            }
+            if (isset($data['password']) && !empty($data['password'])) {
+                $query->equal('password', $data['password']);
+            }
+            if (isset($data['service'])) {
+                $query->equal('service', $data['service']);
+            }
+            if (isset($data['profile'])) {
+                $query->equal('profile', $data['profile']);
+            }
+            if (isset($data['local-address'])) {
+                $query->equal('local-address', $data['local-address']);
+            }
+            if (isset($data['remote-address'])) {
+                $query->equal('remote-address', $data['remote-address']);
+            }
+            if (isset($data['disabled'])) {
+                $query->equal('disabled', $data['disabled'] ? 'yes' : 'no');
+            }
+
+            $query->read();
+            return true;
+        } catch (Exception $e) {
+            Log::error('Error updating PPP secret: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function deletePPPSecret($secretId)
+    {
+        if (!$this->connect()) {
+            return false;
+        }
+
+        try {
+            $this->client->query('/ppp/secret/remove')
+                ->equal('.id', $secretId)
+                ->read();
+            return true;
+        } catch (Exception $e) {
+            Log::error('Error deleting PPP secret: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function disconnectPPPUser($activeId)
+    {
+        if (!$this->connect()) {
+            return false;
+        }
+
+        try {
+            $this->client->query('/ppp/active/remove')
+                ->equal('.id', $activeId)
+                ->read();
+            return true;
+        } catch (Exception $e) {
+            Log::error('Error disconnecting PPP user: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getPPPProfiles()
+    {
+        if (!$this->connect()) {
+            return [];
+        }
+
+        try {
+            return $this->client->query('/ppp/profile/print')->read();
+        } catch (Exception $e) {
+            Log::error('Error getting PPP profiles: ' . $e->getMessage());
+            return [];
         }
     }
 }
